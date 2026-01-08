@@ -16,11 +16,16 @@ Add to your Claude MCP config:
 {
   "mcpServers": {
     "self-claude": {
-      "command": "self-claude-mcp"
+      "command": "self-claude-mcp",
+      "env": {
+        "AUTOPOIESIS": "1"
+      }
     }
   }
 }
 ```
+
+> **Note:** `AUTOPOIESIS=1` is optional. If set, restart messages will remind Claude to enable [autopoiesis-mcp](https://github.com/sancovp/autopoiesis-mcp) (makes Claude loop on purpose). Remove the `env` block if you don't use it.
 
 ## Setup
 
