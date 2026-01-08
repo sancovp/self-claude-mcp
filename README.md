@@ -121,7 +121,7 @@ If running in a container, make sure:
 
 ## Security Note
 
-This MCP is designed for main-agent use only. Subagents don't have access to the MCP, so they can't trigger restarts or compaction. The tool description is intentionally minimal to avoid leaking implementation details.
+⚠️ **Warning:** You should disallow this MCP on subagents. Subagents running these commands can cause strange interactions.
 
 ## License
 
