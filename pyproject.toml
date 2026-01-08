@@ -1,0 +1,13 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "self-claude-mcp"
+version = "0.1.0"
+description = "Self-Claude commands"
+requires-python = ">=3.10"
+dependencies = ["fastmcp"]
+
+[project.scripts]
+self-claude-mcp = "self_claude_mcp:main"
