@@ -57,10 +57,43 @@ sleep 5 && tmux send-keys -t claude 'ALIVE!' && sleep 1 && tmux send-keys -t cla
 tmux send-keys -t claude '/compact' && sleep 1 && tmux send-keys -t claude Enter
 ```
 
+### rules
+```bash
+#!/bin/bash
+# Manage Claude Code rule files
+# Usage: rules global|project <rule-name> <text>
+#        rules show global|project
+#        rules delete global|project <rule-name>
+[[ $# -lt 2 ]] && echo "Usage: rules global|project <rule-name> <text>" && exit 1
+cmd="$1"
+case "$cmd" in
+  show)
+    case "$2" in
+      global)  ls -1 "$HOME/.claude/rules/" 2>/dev/null || echo "No global rules" ;;
+      project) ls -1 "./.claude/rules/" 2>/dev/null || echo "No project rules" ;;
+    esac ;;
+  delete)
+    [[ -z "$3" ]] && echo "Usage: rules delete global|project <rule-name>" && exit 1
+    case "$2" in
+      global)  target="$HOME/.claude/rules/$3.md" ;;
+      project) target="./.claude/rules/$3.md" ;;
+    esac
+    [[ -f "$target" ]] && rm "$target" && echo "Deleted $target" || echo "Not found: $target" ;;
+  global|project)
+    rule_name="$2"; shift 2; text="$*"
+    [[ -z "$text" ]] && echo "Usage: rules $cmd <rule-name> <text>" && exit 1
+    case "$cmd" in
+      global)  dir="$HOME/.claude/rules" ;;
+      project) dir="./.claude/rules" ;;
+    esac
+    mkdir -p "$dir" && echo "- $text" >> "$dir/$rule_name.md" ;;
+esac
+```
+
 ### Install
 ```bash
-chmod +x claude-debug self_restart claude_restart_handler self_compact
-sudo cp claude-debug self_restart claude_restart_handler self_compact /usr/local/bin/
+chmod +x claude-debug self_restart claude_restart_handler self_compact rules
+sudo cp claude-debug self_restart claude_restart_handler self_compact rules /usr/local/bin/
 ```
 
 HAVING TROUBLE? See README: https://github.com/sancovp/self-claude-mcp#troubleshooting

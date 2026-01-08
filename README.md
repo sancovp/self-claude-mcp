@@ -118,6 +118,26 @@ If running in a container, make sure:
 | `self_restart` | `/usr/local/bin/` | Orchestrator (spawns handler) |
 | `claude_restart_handler` | `/usr/local/bin/` | Detached handler (does actual restart) |
 | `self_compact` | `/usr/local/bin/` | Trigger compaction |
+| `rules` | `/usr/local/bin/` | Manage Claude Code rule files |
+
+### rules command
+
+Manage Claude Code rule files from the command line:
+
+```bash
+# Add a rule
+rules global my-rules "Always use TypeScript"
+rules project api-rules "Use REST conventions"
+
+# List rules
+rules show global
+rules show project
+
+# Delete a rule
+rules delete global my-rules
+```
+
+Rules are stored in `~/.claude/rules/` (global) or `./.claude/rules/` (project).
 
 ## Security Note
 
