@@ -1,5 +1,7 @@
 # self-claude-mcp
 
+> **Requires [Claude Code](https://claude.ai/download) | [SIGN UP HERE](https://claude.ai/)**
+
 MCP server for Claude Code self-management commands (hot restart, compaction).
 
 ## Installation
