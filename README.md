@@ -139,6 +139,14 @@ rules delete global my-rules
 
 Rules are stored in `~/.claude/rules/` (global) or `./.claude/rules/` (project).
 
+## Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `AUTOPOIESIS=1` | Enable autopoiesis warning in restart message. Requires [autopoiesis-mcp](https://github.com/sancovp/autopoiesis-mcp). |
+
+Set in your shell profile or export before running Claude.
+
 ## Security Note
 
 ⚠️ **Warning:** You should disallow this MCP on subagents. Subagents running these commands can cause strange interactions.

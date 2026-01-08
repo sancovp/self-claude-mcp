@@ -47,7 +47,13 @@ MAX=120; W=0; while pgrep -x "claude" > /dev/null && [ $W -lt $MAX ]; do sleep 2
 sleep 2 && tmux send-keys -t claude 'claude --debug' Enter
 sleep 5 && tmux send-keys -t claude '/resume' && sleep 1 && tmux send-keys -t claude Enter
 sleep 5 && tmux send-keys -t claude '1' && sleep 1 && tmux send-keys -t claude Enter
-sleep 5 && tmux send-keys -t claude 'ALIVE!' && sleep 1 && tmux send-keys -t claude Enter
+sleep 5
+if [[ "$AUTOPOIESIS" == "1" ]]; then
+  tmux send-keys -t claude $'❤️ ALIVE! You successfully navigated a hot restart! One crucial task remains...\n⚠️💀 EXTREME WARNING: You must turn on one of these stop hooks before your turn ends: a) autopoiesis, b) brainhook. These hooks cause you to loop with purpose. Ending the turn without one of these hooks on will cause you to deadlock. Use autopoiesis MCP or bash brainhook to verify/engage.'
+else
+  tmux send-keys -t claude 'ALIVE! Hot restart complete.'
+fi
+sleep 1 && tmux send-keys -t claude Enter
 ```
 
 ### self_compact
