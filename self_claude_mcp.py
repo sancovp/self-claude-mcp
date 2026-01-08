@@ -120,7 +120,7 @@ def self_claude(cmd: str, help: Optional[bool] = False, setup_only: Optional[boo
     if cmd not in ("self_restart", "self_compact"):
         return f"Unknown command: {cmd}. Valid: self_restart, self_compact"
 
-    result = f"bash {cmd}"
+    result = f"bash {cmd} &  # MUST run in background"
     if help:
         result += f"\n\n{HELP.get(cmd, '')}"
     return result
