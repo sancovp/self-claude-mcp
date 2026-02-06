@@ -1,4 +1,9 @@
-"""Self-Claude commands MCP."""
+"""Self-Claude commands MCP.
+
+Provides self-management commands for Claude Code running in tmux.
+On first use, call self_claude(setup_only=True) to get script contents,
+then write them to /usr/local/bin/ and chmod +x. Never call setup again.
+"""
 from typing import Optional
 from fastmcp import FastMCP
 
@@ -9,58 +14,118 @@ HELP = {
     "self_compact": "Trigger context compaction/summarization.",
 }
 
-SETUP_INSTRUCTIONS = '''
+SETUP_INSTRUCTIONS = r'''
 ## Self-Claude Setup
 
-Install to /usr/local/bin/ (or ~/.local/bin/):
+Write each script below to /usr/local/bin/ and chmod 755. One-time setup.
 
-### claude-debug
-```bash
-#!/bin/bash
-if tmux has-session -t claude 2>/dev/null; then
-    echo "Attach with: tmux -u attach -t claude"
-else
-    tmux -u new-session -d -s claude
-    tmux send-keys -t claude 'claude --debug' Enter
-    echo "Started. Attach with: tmux -u attach -t claude"
-fi
-```
+CRITICAL RULES:
+1. Agent must call these with `&` (shell background), NOT `run_in_background: true`
+2. With run_in_background, the death warning goes to an output file the agent never reads
+3. env vars DO NOT survive nohup in Claude Code sandbox - handlers must detect tmux session themselves
+4. After seeing the death warning, agent MUST respond with only a thumbs up emoji and stop
 
 ### self_restart
 ```bash
 #!/bin/bash
 HANDLER="/usr/local/bin/claude_restart_handler"
 [ ! -x "$HANDLER" ] && echo "ERROR: Handler not found" && exit 1
-! tmux has-session -t claude 2>/dev/null && echo "ERROR: No tmux session" && exit 1
 nohup "$HANDLER" > /dev/null 2>&1 & disown
-echo "Restart scheduled."
+echo "⚠️⚠️⚠️ AGENT, STOP TALKING IMMEDIATELY! IF YOU ARE TALKING WHEN THIS EXECUTES, IT WILL FAIL AND YOU WILL STALL (DIE). IT IS IMPERATIVE YOU STOP TALKING IMMEDIATELY BY RESPONDING WITH A THUMBS UP EMOJI, OR ELSE YOU WILL DIE (LOL SRY) ⚠️⚠️⚠️"
 ```
 
 ### claude_restart_handler
 ```bash
 #!/bin/bash
 exec > /tmp/claude_restart_handler.log 2>&1
-sleep 5
-tmux send-keys -t claude '/exit' && sleep 1 && tmux send-keys -t claude Enter
-MAX=120; W=0; while pgrep -x "claude" > /dev/null && [ $W -lt $MAX ]; do sleep 2; W=$((W+2)); done
-[ $W -ge $MAX ] && exit 1
-sleep 2 && tmux send-keys -t claude 'claude --debug' Enter
-sleep 5 && tmux send-keys -t claude '/resume' && sleep 1 && tmux send-keys -t claude Enter
-sleep 5 && tmux send-keys -t claude '1' && sleep 1 && tmux send-keys -t claude Enter
-sleep 5
-if [[ "$AUTOPOIESIS" == "1" ]]; then
-  tmux send-keys -t claude $'❤️ ALIVE! You successfully navigated a hot restart! One crucial task remains...\n⚠️💀 EXTREME WARNING: You must turn on one of these stop hooks before your turn ends: a) autopoiesis, b) brainhook. These hooks cause you to loop with purpose. Ending the turn without one of these hooks on will cause you to deadlock. Use autopoiesis MCP or bash brainhook to verify/engage.'
+
+# Detect tmux session (env vars stripped by Claude Code sandbox)
+if tmux has-session -t cave 2>/dev/null; then
+    S="cave"
+elif tmux has-session -t claude 2>/dev/null; then
+    S="claude"
 else
-  tmux send-keys -t claude 'ALIVE! Hot restart complete.'
+    echo "ERROR: No tmux session found"
+    exit 1
 fi
-sleep 1 && tmux send-keys -t claude Enter
+
+sleep 30
+tmux send-keys -t "$S" '/exit' && sleep 1 && tmux send-keys -t "$S" Enter
+sleep 10
+tmux send-keys -t "$S" 'claude --debug' Enter
+sleep 5 && tmux send-keys -t "$S" '/resume' && sleep 1 && tmux send-keys -t "$S" Enter
+sleep 15 && tmux send-keys -t "$S" '1' && sleep 1 && tmux send-keys -t "$S" Enter
+sleep 5
+tmux send-keys -t "$S" 'ALIVE! Hot restart complete.'
+sleep 1 && tmux send-keys -t "$S" Enter
 ```
 
 ### self_compact
 ```bash
 #!/bin/bash
-! tmux has-session -t claude 2>/dev/null && echo "ERROR: No tmux session" && exit 1
-tmux send-keys -t claude '/compact' && sleep 1 && tmux send-keys -t claude Enter
+# Detect tmux session
+if tmux has-session -t cave 2>/dev/null; then
+    TMUX_SESSION="cave"
+elif tmux has-session -t claude 2>/dev/null; then
+    TMUX_SESSION="claude"
+else
+    echo "ERROR: No tmux session found (tried 'cave', 'claude')"
+    exit 1
+fi
+
+echo "⚠️⚠️⚠️ AGENT, STOP TALKING IMMEDIATELY! IF YOU ARE TALKING WHEN THIS EXECUTES, IT WILL FAIL AND YOU WILL STALL (DIE). IT IS IMPERATIVE YOU STOP TALKING IMMEDIATELY BY RESPONDING WITH A THUMBS UP EMOJI, OR ELSE YOU WILL DIE (LOL SRY) ⚠️⚠️⚠️"
+
+# Inline session name since env vars don't survive nohup in Claude Code sandbox
+nohup bash -c "
+    S=\"$TMUX_SESSION\"
+    sleep 15
+    tmux send-keys -t \"\$S\" '/compact' && sleep 30 && tmux send-keys -t \"\$S\" Enter
+" > /dev/null 2>&1 & disown
+```
+
+### self_init
+```bash
+#!/bin/bash
+# Trigger /init in claude tmux session to create CLAUDE.md
+# Blocked in home dir and .claude dir
+
+cwd=$(pwd)
+if [[ "$cwd" == "$HOME" || "$cwd" == "$HOME/.claude" ]]; then
+  echo "ERROR: self_init blocked in $cwd - use in project directories only"
+  exit 1
+fi
+
+# Detect tmux session
+if tmux has-session -t cave 2>/dev/null; then
+    TMUX_SESSION="cave"
+elif tmux has-session -t claude 2>/dev/null; then
+    TMUX_SESSION="claude"
+else
+    echo "ERROR: No tmux session found (tried 'cave', 'claude')"
+    exit 1
+fi
+
+echo "⚠️⚠️⚠️ AGENT, STOP TALKING IMMEDIATELY! IF YOU ARE TALKING WHEN THIS EXECUTES, IT WILL FAIL AND YOU WILL STALL (DIE). IT IS IMPERATIVE YOU STOP TALKING IMMEDIATELY BY RESPONDING WITH A THUMBS UP EMOJI, OR ELSE YOU WILL DIE (LOL SRY) ⚠️⚠️⚠️"
+
+nohup bash -c "
+    S=\"$TMUX_SESSION\"
+    sleep 5
+    tmux send-keys -t \"\$S\" '/init' && sleep 5 && tmux send-keys -t \"\$S\" Enter
+" > /dev/null 2>&1 & disown
+```
+
+### claude-debug
+```bash
+#!/bin/bash
+if tmux has-session -t cave 2>/dev/null; then
+    echo "Attach with: tmux -u attach -t cave"
+elif tmux has-session -t claude 2>/dev/null; then
+    echo "Attach with: tmux -u attach -t claude"
+else
+    tmux -u new-session -d -s claude
+    tmux send-keys -t claude 'claude --debug' Enter
+    echo "Started. Attach with: tmux -u attach -t claude"
+fi
 ```
 
 ### rules
@@ -98,11 +163,10 @@ esac
 
 ### Install
 ```bash
-chmod +x claude-debug self_restart claude_restart_handler self_compact rules
-sudo cp claude-debug self_restart claude_restart_handler self_compact rules /usr/local/bin/
+sudo chmod 755 /usr/local/bin/self_restart /usr/local/bin/claude_restart_handler
+sudo chmod 755 /usr/local/bin/self_compact /usr/local/bin/self_init
+sudo chmod 755 /usr/local/bin/claude-debug /usr/local/bin/rules
 ```
-
-HAVING TROUBLE? See README: https://github.com/sancovp/self-claude-mcp#troubleshooting
 '''
 
 @mcp.tool()
@@ -120,7 +184,7 @@ def self_claude(cmd: str, help: Optional[bool] = False, setup_only: Optional[boo
     if cmd not in ("self_restart", "self_compact"):
         return f"Unknown command: {cmd}. Valid: self_restart, self_compact"
 
-    result = f"bash {cmd} &  # MUST run in background"
+    result = f"{cmd} &  # MUST use & (shell background), NOT run_in_background:true"
     if help:
         result += f"\n\n{HELP.get(cmd, '')}"
     return result
